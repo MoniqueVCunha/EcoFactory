@@ -5,7 +5,7 @@ import Topbar from '../components/Topbar'
 import StatCard from '../components/StatCard'
 import { consumoAguaMensal, consumoEnergiaMensal } from '../data/mockData'
 
-const API_URL = 'http://localhost:3001/api/sustentabilidade'
+const API_URL = 'http://localhost:3001/sustentabilidade'
 
 // Valor padrão caso o banco de dados esteja vazio temporariamente
 const dadosPadrao = {

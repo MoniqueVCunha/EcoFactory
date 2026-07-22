@@ -6,7 +6,7 @@ import Badge from '../components/Badge'
 import Modal from '../components/Modal'
 import { niveisRisco } from '../data/mockData'
 
-const API_URL = 'http://localhost:3001/api/ocorrencias' // Ajuste para a sua rota de backend se necessário
+const API_URL = 'http://localhost:3001/ocorrencias'
 
 const vazio = { tipo: '', local: '', data: '', risco: niveisRisco[0], descricao: '', medidaPreventiva: '' }
 

@@ -6,7 +6,7 @@ import Modal from '../components/Modal'
 import { setores, tiposMaquina, statusMaquina } from '../data/mockData'
 
 // Endereço do seu Back-End Node.js
-const API_URL = 'http://localhost:3000/maquinas'
+const API_URL = 'http://localhost:3001/maquinas'
 
 const vazio = { 
   nome: '', 

@@ -12,7 +12,7 @@ export const maquinasIniciais = [
 
 export const setores = ['Fundição', 'Montagem', 'Pintura', 'Embalagem', 'Logística', 'Admin']
 export const tiposMaquina = ['CNC', 'Fresadora', 'Prensa', 'Robótico', 'Compressor', 'Injetora']
-export const statusMaquina = ['Operando', 'Manutenção', 'Parada', 'Desativada']
+export const statusMaquina = ['Em operação', 'Em manutenção', 'Parada', 'Desativada']
 
 export const producoesIniciais = [
   { id: 1, produto: 'Válvula V-200', quantidadeProduzida: 1240, quantidadeEsperada: 1200, maquinaId: 1, data: '2026-07-15' },

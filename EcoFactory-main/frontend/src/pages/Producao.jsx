@@ -6,7 +6,7 @@ import Modal from '../components/Modal'
 import { producaoMensal } from '../data/mockData' // Mantido o gráfico mockado pois depende de agregações complexas
 
 // Endereço correto do seu Back-End Node.js
-const API_URL = 'http://localhost:3000'
+const API_URL = 'http://localhost:3001'
 
 export default function Producao() {
   const [producoes, setProducoes] = useState([])
