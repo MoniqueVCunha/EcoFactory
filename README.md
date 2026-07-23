@@ -8,7 +8,8 @@ O **EcoFactory** é um sistema web integrado para monitoramento industrial focad
 * [Funcionalidades](#-funcionalidades)
 * [Tecnologias Utilizadas](#-tecnologias-utilizadas)
 * [Modelagem do Banco de Dados](#-modelagem-do-banco-de-dados)
-* [Como Executar o Projeto](#-como-executar-projeto)
+* [Como Executar o Projeto](#-como-executar-o-projeto)
+* [Como Executar os Testes](#-como-executar-os-testes)
 * [Endpoints da API](#-endpoints-da-api)
 * [Equipe de Desenvolvimento](#-equipe-de-desenvolvimento)
 
@@ -23,8 +24,8 @@ O **EcoFactory** é um sistema web integrado para monitoramento industrial focad
 ---
 
 ## Tecnologias Utilizadas
-* **Front-End**: React.js, Tailwind CSS, Recharts, Axios.
-* **Back-End**: Node.js, Express.js.
+* **Front-End**: React.js, Tailwind CSS, Lucide React, Axios, Vitest, React Testing Library.
+* **Back-End**: Node.js, Express.js, Jest, Supertest.
 * **Banco de Dados**: PostgreSQL (Hospedado no Neon).
 * **Controle de Versão**: Git e GitHub.
 
@@ -42,7 +43,7 @@ O sistema utiliza um banco de dados relacional com as seguintes tabelas principa
 ## Como Executar o Projeto
 
 ### Pré-requisitos
-* Node.js instalado.
+* Node.js instalado (v18+).
 * Conta ou credenciais do banco PostgreSQL (Neon).
 
 ### 1. Configurando o Back-End
