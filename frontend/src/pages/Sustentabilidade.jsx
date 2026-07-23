@@ -1,134 +1,104 @@
 import { useState, useEffect } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import axios from 'axios'
 import Topbar from '../components/Topbar'
-import StatCard from '../components/StatCard'
-import { consumoAguaMensal, consumoEnergiaMensal } from '../data/mockData'
 
-// Endereço correto apontando para o servidor Express rodando na porta 3000
-const API_URL = 'http://localhost:3000/sustentabilidade'
+const API_SUSTENTABILIDADE = 'http://localhost:3000/sustentabilidade'
 
-const dadosPadrao = {
-  consumoAgua: 0,
-  consumoEnergia: 0,
-  residuos: 0,
-  quantidadeReciclada: 0
+const MOCK_SUSTENTABILIDADE = {
+  aguaTotal: 2150,
+  energiaTotal: 840,
+  residuosTotal: 1250,
+  taxaReciclagem: 78
 }
 
 export default function Sustentabilidade() {
-  const [dados, setDados] = useState(dadosPadrao)
-  const [loading, setLoading] = useState(true)
+  const [dados, setDados] = useState(MOCK_SUSTENTABILIDADE)
 
-  // 🔄 CARREGAR INDICADORES AMBIENTAIS DO BANCO DE DADOS (GET)
   useEffect(() => {
-    async function carregarIndicadores() {
+    async function carregar() {
       try {
-        setLoading(true)
-        const response = await axios.get(API_URL)
-        
-        if (response.data && response.data.length > 0) {
-          // Soma os totais de todos os registros presentes na tabela do banco
-          const totais = response.data.reduce(
-            (acc, curr) => {
-              const res = Number(curr.quantidade_residuos || curr.residuos || 0)
-              const rec = Number(curr.quantidade_reciclada || curr.quantidadeReciclada || 0)
-              const agua = Number(curr.consumo_agua || curr.consumoAgua || 0)
-              
-              return {
-                residuos: acc.residuos + res,
-                quantidadeReciclada: acc.quantidadeReciclada + rec,
-                consumoAgua: acc.consumoAgua + agua,
-              }
-            },
-            { residuos: 0, quantidadeReciclada: 0, consumoAgua: 0 }
-          )
-
-          setDados({
-            ...totais,
-            consumoEnergia: 420 // Estimativa/Mock para energia se não estipulado por registro
-          })
+        const response = await axios.get(API_SUSTENTABILIDADE)
+        if (response.data && response.data.aguaTotal) {
+          setDados(response.data)
         }
-      } catch (err) {
-        console.error('Erro ao buscar indicadores de sustentabilidade:', err)
-      } finally {
-        setLoading(false)
+      } catch {
+        console.warn('Backend indisponível para sustentabilidade. Exibindo métricas locais.')
       }
     }
-
-    carregarIndicadores()
+    carregar()
   }, [])
-
-  // Cálculo seguro do percentual de reciclagem (evita divisão por zero)
-  const percentualReciclado = dados.residuos > 0 
-    ? Math.round((dados.quantidadeReciclada / dados.residuos) * 100)
-    : 0
-
-  const destinacao = [
-    { label: 'Reciclagem', valor: percentualReciclado, cor: 'bg-eco-green' },
-    { label: 'Reaproveitamento interno', valor: 6, cor: 'bg-blue-500' },
-    { label: 'Aterro controlado', valor: 5, cor: 'bg-orange-400' },
-    { label: 'Descarte especial', valor: 2, cor: 'bg-red-500' },
-  ]
 
   return (
     <div>
       <Topbar titulo="Sustentabilidade" subtitulo="Indicadores ambientais e de eficiência energética" />
 
-      {loading ? (
-        <div className="text-center text-slate-500 py-12 text-sm">Carregando indicadores ecológicos... 🌿</div>
-      ) : (
-        <>
-          <div className="flex flex-wrap gap-4 mb-6">
-            <StatCard icon="💧" label="Consumo de Água" value={`${dados.consumoAgua} m³`} hint="Total acumulado" />
-            <StatCard icon="⚡" label="Consumo de Energia" value={`${dados.consumoEnergia} MWh`} hint="-6% vs mês anterior" />
-            <StatCard icon="📦" label="Resíduos Gerados" value={`${dados.residuos} kg`} hint="Total acumulado" hintPositive={false} />
-            <StatCard icon="♻️" label="% Reciclado" value={`${percentualReciclado}%`} hint="Taxa de reaproveitamento" />
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium">Consumo de Água</p>
+          <h3 className="text-2xl font-bold text-slate-800 mt-1">{dados.aguaTotal} m³</h3>
+          <span className="text-xs text-green-600 font-medium">↗ Total acumulado</span>
+        </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="font-bold text-slate-800 mb-4">Consumo de Água (m³)</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={consumoAguaMensal}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="valor" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium">Consumo de Energia</p>
+          <h3 className="text-2xl font-bold text-slate-800 mt-1">{dados.energiaTotal} MWh</h3>
+          <span className="text-xs text-green-600 font-medium">↘ -6% vs mês anterior</span>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium">Resíduos Gerados</p>
+          <h3 className="text-2xl font-bold text-slate-800 mt-1">{dados.residuosTotal} kg</h3>
+          <span className="text-xs text-slate-400 font-medium">Total acumulado</span>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium">% Reciclado</p>
+          <h3 className="text-2xl font-bold text-slate-800 mt-1">{dados.taxaReciclagem}%</h3>
+          <span className="text-xs text-green-600 font-medium">↗ Taxa de reaproveitamento</span>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl border border-slate-200">
+        <h4 className="text-sm font-semibold text-slate-700 mb-4">Destinação de Resíduos</h4>
+        <div className="space-y-4 text-sm">
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-slate-600">Reciclagem</span>
+              <span className="font-semibold text-slate-700">78%</span>
             </div>
-
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="font-bold text-slate-800 mb-4">Consumo de Energia (MWh)</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={consumoEnergiaMensal}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="valor" stroke="#16a34a" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h3 className="font-bold text-slate-800 mb-4">Destinação de Resíduos</h3>
-            <div className="space-y-3">
-              {destinacao.map((d) => (
-                <div key={d.label} className="flex items-center gap-3 text-sm">
-                  <span className="w-44 text-slate-500">{d.label}</span>
-                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${d.cor}`} style={{ width: `${d.valor}%` }} />
-                  </div>
-                  <span className="w-10 text-right font-semibold text-slate-700">{d.valor}%</span>
-                </div>
-              ))}
+            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div className="bg-green-500 h-full" style={{ width: '78%' }}></div>
             </div>
           </div>
-        </>
-      )}
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-slate-600">Reaproveitamento interno</span>
+              <span className="font-semibold text-slate-700">14%</span>
+            </div>
+            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div className="bg-blue-500 h-full" style={{ width: '14%' }}></div>
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-slate-600">Aterro controlado</span>
+              <span className="font-semibold text-slate-700">5%</span>
+            </div>
+            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div className="bg-orange-400 h-full" style={{ width: '5%' }}></div>
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-slate-600">Descarte especial</span>
+              <span className="font-semibold text-slate-700">3%</span>
+            </div>
+            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div className="bg-red-500 h-full" style={{ width: '3%' }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

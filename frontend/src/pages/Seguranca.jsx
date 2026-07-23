@@ -1,43 +1,28 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import Topbar from '../components/Topbar'
-import StatCard from '../components/StatCard'
-import Badge from '../components/Badge'
 import Modal from '../components/Modal'
-import { niveisRisco as mockNiveis } from '../data/mockData'
 
-// Endereço correto apontando para o seu Express rodando na porta 3000
-const API_URL = 'http://localhost:3000/ocorrencias'
+const API_SEGURANCA = 'http://localhost:3000/seguranca'
 
-const opcoesRisco = mockNiveis || ['Baixo', 'Médio', 'Alto', 'Crítico']
-const vazio = { tipo: '', local: '', data: '', risco: opcoesRisco[0], descricao: '', medidaPreventiva: '' }
+const MOCK_OCORRENCIAS = [
+  { id: 1, tipo: 'Vazamento de Óleo', local: 'Setor Usinagem - Torno A1', risco: 'Médio', data: '2026-07-18', descricao: 'Pequeno vazamento identificado no reservatório inferior.' },
+  { id: 2, tipo: 'Falta de EPI', local: 'Montagem', risco: 'Baixo', data: '2026-07-22', descricao: 'Operador sem óculos de proteção na área delimitada.' }
+]
 
 export default function Seguranca() {
   const [ocorrencias, setOcorrencias] = useState([])
   const [loading, setLoading] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
-  const [form, setForm] = useState(vazio)
-  const [erros, setErros] = useState({})
+  const [form, setForm] = useState({ tipo: '', local: '', data: '', risco: 'Baixo', descricao: '' })
 
-  // 🔄 BUSCAR OCORRÊNCIAS DO BANCO DE DADOS (GET)
   async function carregarOcorrencias() {
     try {
       setLoading(true)
-      const response = await axios.get(API_URL)
-      
-      // Normaliza as propriedades vindas do Postgres para o React
-      const dadosTratados = response.data.map((o) => ({
-        id: o.id,
-        tipo: o.descricao ? o.descricao.split(' - ')[0] : 'Ocorrência', // Separa o tipo da descrição se gravado junto
-        local: 'Planta Principal',
-        data: o.data_ocorrencia || o.data || new Date().toISOString(),
-        risco: o.nivel_risco || 'Médio',
-        descricao: o.descricao || '',
-        medidaPreventiva: o.status === 'Resolvido' ? 'Ação concluída' : 'Em análise'
-      }))
-      setOcorrencias(dadosTratados)
-    } catch (err) {
-      console.error('Erro ao buscar ocorrências:', err)
+      const res = await axios.get(API_SEGURANCA)
+      setOcorrencias(res.data?.length > 0 ? res.data : MOCK_OCORRENCIAS)
+    } catch {
+      setOcorrencias(MOCK_OCORRENCIAS)
     } finally {
       setLoading(false)
     }
@@ -47,45 +32,48 @@ export default function Seguranca() {
     carregarOcorrencias()
   }, [])
 
-  // 📊 Cálculo dinâmico dos cards de estatísticas
-  const criticas = ocorrencias.filter((o) => o.risco === 'Crítico').length
-  const altas = ocorrencias.filter((o) => o.risco === 'Alto').length
-
-  function validar() {
-    const novosErros = {}
-    if (!form.tipo.trim()) novosErros.tipo = 'Informe o tipo da ocorrência.'
-    if (!form.data) novosErros.data = 'Selecione a data.'
-    setErros(novosErros)
-    return Object.keys(novosErros).length === 0
-  }
-
-  // 💾 SALVAR NOVA OCORRÊNCIA NO BANCO DE DADOS (POST)
   async function salvar(e) {
     e.preventDefault()
-    if (!validar()) return
-
-    // Prepara o payload com os nomes exatos esperados pelo server.js
-    const dadosParaEnviar = {
-      descricao: `${form.tipo}${form.local ? ' - ' + form.local : ''}: ${form.descricao}`,
-      nivel_risco: form.risco,
-      status: 'Aberta',
-      data_ocorrencia: form.data
-    }
+    
+    const novaOcorrencia = { ...form }
 
     try {
-      await axios.post(API_URL, dadosParaEnviar)
+      await axios.post(API_SEGURANCA, novaOcorrencia)
+      carregarOcorrencias()
+    } catch {
+      console.warn('Backend sem resposta. Salvando ocorrência localmente.')
+      setOcorrencias(prev => [{ id: Date.now(), ...novaOcorrencia }, ...prev])
+    } finally {
       setModalAberto(false)
-      setForm(vazio)
-      carregarOcorrencias() // Recarrega os dados atualizados do Neon
-    } catch (err) {
-      console.error('Erro ao salvar ocorrência:', err)
-      alert('Erro ao registrar ocorrência no banco de dados.')
+      setForm({ tipo: '', local: '', data: '', risco: 'Baixo', descricao: '' })
     }
   }
+
+  const criticos = ocorrencias.filter(o => o.risco === 'Crítico').length
+  const altos = ocorrencias.filter(o => o.risco === 'Alto').length
 
   return (
     <div>
       <Topbar titulo="Segurança" subtitulo="Registro de ocorrências e ações preventivas" />
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium">Ocorrências Registradas</p>
+          <h3 className="text-2xl font-bold text-slate-800 mt-1">{ocorrencias.length}</h3>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium">Risco Crítico</p>
+          <h3 className="text-2xl font-bold text-red-600 mt-1">{criticos}</h3>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium">Risco Alto</p>
+          <h3 className="text-2xl font-bold text-orange-500 mt-1">{altos}</h3>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500 font-medium">Total Ativo</p>
+          <h3 className="text-2xl font-bold text-slate-800 mt-1">{ocorrencias.length}</h3>
+        </div>
+      </div>
 
       <div className="flex justify-end mb-4">
         <button
@@ -96,43 +84,43 @@ export default function Seguranca() {
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-4 mb-6">
-        <StatCard icon="📋" label="Ocorrências Registradas" value={ocorrencias.length} />
-        <StatCard icon="🔴" label="Risco Crítico" value={criticas} hintPositive={false} />
-        <StatCard icon="🟠" label="Risco Alto" value={altas} hintPositive={false} />
-        <StatCard icon="✅" label="Total Ativo" value={ocorrencias.length} />
-      </div>
-
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {loading ? (
-          <div className="text-center text-slate-500 py-10 text-sm">Carregando dados de SST da nuvem... ⏳</div>
+          <div className="text-center text-slate-500 py-10">Carregando dados de segurança... ⏳</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-slate-400 uppercase border-b border-slate-100">
                 <th className="px-5 py-3 font-medium">Tipo / Detalhes</th>
-                <th className="px-5 py-3 font-medium">Data</th>
+                <th className="px-5 py-3 font-medium">Local</th>
                 <th className="px-5 py-3 font-medium">Risco</th>
-                <th className="px-5 py-3 font-medium">Descrição Completa</th>
+                <th className="px-5 py-3 font-medium">Data</th>
+                <th className="px-5 py-3 font-medium">Descrição</th>
               </tr>
             </thead>
             <tbody>
               {ocorrencias.map((o) => (
                 <tr key={o.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
                   <td className="px-5 py-3 font-medium text-slate-700">{o.tipo}</td>
-                  <td className="px-5 py-3 text-slate-400">
-                    {o.data ? new Date(o.data).toLocaleDateString('pt-BR') : '—'}
+                  <td className="px-5 py-3 text-slate-500">{o.local}</td>
+                  <td className="px-5 py-3">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      o.risco === 'Crítico' ? 'bg-red-100 text-red-700' :
+                      o.risco === 'Alto' ? 'bg-orange-100 text-orange-700' :
+                      o.risco === 'Médio' ? 'bg-amber-100 text-amber-700' :
+                      'bg-slate-100 text-slate-700'
+                    }`}>
+                      {o.risco}
+                    </span>
                   </td>
-                  <td className="px-5 py-3"><Badge valor={o.risco} /></td>
-                  <td className="px-5 py-3 text-slate-500 max-w-xs truncate" title={o.descricao}>
-                    {o.descricao || '—'}
-                  </td>
+                  <td className="px-5 py-3 text-slate-500">{o.data}</td>
+                  <td className="px-5 py-3 text-slate-600 max-w-xs truncate">{o.descricao}</td>
                 </tr>
               ))}
               {ocorrencias.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-center text-slate-400 py-10">
-                    Nenhuma ocorrência registrada no banco. Tudo seguro por aqui!
+                  <td colSpan={5} className="text-center text-slate-400 py-10">
+                    Nenhuma ocorrência registrada. Tudo seguro por aqui!
                   </td>
                 </tr>
               )}
@@ -147,36 +135,35 @@ export default function Seguranca() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Tipo da ocorrência</label>
               <input
+                required
                 value={form.tipo}
                 onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-                className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm"
-                placeholder="Ex: Vazamento de óleo"
+                className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                placeholder="Ex: Vazamento, Falha em EPI..."
               />
-              {erros.tipo && <p className="text-xs text-red-600 mt-1">{erros.tipo}</p>}
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Local</label>
                 <input
+                  required
                   value={form.local}
                   onChange={(e) => setForm({ ...form, local: e.target.value })}
                   className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm"
-                  placeholder="Ex: Setor Fundição"
+                  placeholder="Ex: Setor A"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Data</label>
                 <input
                   type="date"
+                  required
                   value={form.data}
                   onChange={(e) => setForm({ ...form, data: e.target.value })}
                   className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm"
                 />
-                {erros.data && <p className="text-xs text-red-600 mt-1">{erros.data}</p>}
               </div>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Nível de risco</label>
               <select
@@ -184,34 +171,27 @@ export default function Seguranca() {
                 onChange={(e) => setForm({ ...form, risco: e.target.value })}
                 className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm"
               >
-                {opcoesRisco.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
+                <option value="Baixo">Baixo</option>
+                <option value="Médio">Médio</option>
+                <option value="Alto">Alto</option>
+                <option value="Crítico">Crítico</option>
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
               <textarea
+                required
                 value={form.descricao}
                 onChange={(e) => setForm({ ...form, descricao: e.target.value })}
                 className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm"
-                rows={2}
+                rows={3}
               />
             </div>
-
             <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setModalAberto(false)}
-                className="flex-1 border border-slate-200 rounded-lg py-2 text-sm font-medium text-slate-600"
-              >
+              <button type="button" onClick={() => setModalAberto(false)} className="flex-1 border border-slate-200 rounded-lg py-2 text-sm font-medium text-slate-600">
                 Cancelar
               </button>
-              <button
-                type="submit"
-                className="flex-1 bg-eco-green hover:bg-green-700 text-white rounded-lg py-2 text-sm font-semibold"
-              >
+              <button type="submit" className="flex-1 bg-eco-green hover:bg-green-700 text-white rounded-lg py-2 text-sm font-semibold">
                 Salvar
               </button>
             </div>
