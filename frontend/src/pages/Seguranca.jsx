@@ -14,13 +14,23 @@ export default function Seguranca() {
   const [ocorrencias, setOcorrencias] = useState([])
   const [loading, setLoading] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
-  const [form, setForm] = useState({ tipo: '', local: '', data: '', risco: 'Baixo', descricao: '' })
+  const [form, setForm] = useState({
+    tipo: '',
+    local: '',
+    data: new Date().toISOString().split('T')[0],
+    risco: 'Baixo',
+    descricao: ''
+  })
 
   async function carregarOcorrencias() {
     try {
       setLoading(true)
       const res = await axios.get(API_SEGURANCA)
-      setOcorrencias(res.data?.length > 0 ? res.data : MOCK_OCORRENCIAS)
+      if (res.data && res.data.length > 0) {
+        setOcorrencias(res.data)
+      } else {
+        setOcorrencias(MOCK_OCORRENCIAS)
+      }
     } catch {
       setOcorrencias(MOCK_OCORRENCIAS)
     } finally {
@@ -35,7 +45,14 @@ export default function Seguranca() {
   async function salvar(e) {
     e.preventDefault()
     
-    const novaOcorrencia = { ...form }
+    const novaOcorrencia = {
+      tipo: form.tipo,
+      local: form.local,
+      data: form.data,
+      risco: form.risco,
+      nivel_risco: form.risco, // garante compatibilidade se a API usar nivel_risco
+      descricao: form.descricao
+    }
 
     try {
       await axios.post(API_SEGURANCA, novaOcorrencia)
@@ -45,12 +62,18 @@ export default function Seguranca() {
       setOcorrencias(prev => [{ id: Date.now(), ...novaOcorrencia }, ...prev])
     } finally {
       setModalAberto(false)
-      setForm({ tipo: '', local: '', data: '', risco: 'Baixo', descricao: '' })
+      setForm({
+        tipo: '',
+        local: '',
+        data: new Date().toISOString().split('T')[0],
+        risco: 'Baixo',
+        descricao: ''
+      })
     }
   }
 
-  const criticos = ocorrencias.filter(o => o.risco === 'Crítico').length
-  const altos = ocorrencias.filter(o => o.risco === 'Alto').length
+  const criticos = ocorrencias.filter(o => (o.risco || o.nivel_risco) === 'Crítico').length
+  const altos = ocorrencias.filter(o => (o.risco || o.nivel_risco) === 'Alto').length
 
   return (
     <div>
@@ -99,24 +122,28 @@ export default function Seguranca() {
               </tr>
             </thead>
             <tbody>
-              {ocorrencias.map((o) => (
-                <tr key={o.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
-                  <td className="px-5 py-3 font-medium text-slate-700">{o.tipo}</td>
-                  <td className="px-5 py-3 text-slate-500">{o.local}</td>
-                  <td className="px-5 py-3">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      o.risco === 'Crítico' ? 'bg-red-100 text-red-700' :
-                      o.risco === 'Alto' ? 'bg-orange-100 text-orange-700' :
-                      o.risco === 'Médio' ? 'bg-amber-100 text-amber-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>
-                      {o.risco}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-slate-500">{o.data}</td>
-                  <td className="px-5 py-3 text-slate-600 max-w-xs truncate">{o.descricao}</td>
-                </tr>
-              ))}
+              {ocorrencias.map((o) => {
+                const riscoAtual = o.risco || o.nivel_risco || 'Baixo'
+                const dataFormatada = o.data ? o.data.substring(0, 10) : '-'
+                return (
+                  <tr key={o.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
+                    <td className="px-5 py-3 font-medium text-slate-700">{o.tipo}</td>
+                    <td className="px-5 py-3 text-slate-500">{o.local}</td>
+                    <td className="px-5 py-3">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        riscoAtual === 'Crítico' ? 'bg-red-100 text-red-700' :
+                        riscoAtual === 'Alto' ? 'bg-orange-100 text-orange-700' :
+                        riscoAtual === 'Médio' ? 'bg-amber-100 text-amber-700' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>
+                        {riscoAtual}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-slate-500">{dataFormatada}</td>
+                    <td className="px-5 py-3 text-slate-600 max-w-xs truncate">{o.descricao}</td>
+                  </tr>
+                )
+              })}
               {ocorrencias.length === 0 && (
                 <tr>
                   <td colSpan={5} className="text-center text-slate-400 py-10">

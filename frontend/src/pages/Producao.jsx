@@ -3,7 +3,7 @@ import axios from 'axios'
 import Topbar from '../components/Topbar'
 import Modal from '../components/Modal'
 
-const API_PRODUCAO = 'http://localhost:3000/producao'
+const API_PRODUCAO = 'http://localhost:3000/producoes'
 const API_MAQUINAS = 'http://localhost:3000/maquinas'
 
 const MOCK_MAQUINAS = [
@@ -13,8 +13,8 @@ const MOCK_MAQUINAS = [
 ]
 
 const MOCK_PRODUCAO = [
-  { id: 1, produto: 'Eixo de Transmissão', quantidade: 450, meta: 500, maquina_id: 1, maquina_nome: 'Torno CNC A1', data: '2026-07-20' },
-  { id: 2, produto: 'Chapa Estampada 5mm', quantidade: 1200, meta: 1000, maquina_id: 2, maquina_nome: 'Prensa Hidráulica P2', data: '2026-07-21' }
+  { id: 1, produto: 'Eixo de Transmissão', quantidade_produzida: 450, quantidade_esperada: 500, maquina_id: 1, nome_maquina: 'Torno CNC A1', data: '2026-07-20' },
+  { id: 2, produto: 'Chapa Estampada 5mm', quantidade_produzida: 1200, quantidade_esperada: 1000, maquina_id: 2, nome_maquina: 'Prensa Hidráulica P2', data: '2026-07-21' }
 ]
 
 export default function Producao() {
@@ -26,8 +26,8 @@ export default function Producao() {
   
   const [form, setForm] = useState({
     produto: '',
-    quantidade: '',
-    meta: '',
+    quantidade_produzida: '',
+    quantidade_esperada: '',
     maquina_id: '',
     data: new Date().toISOString().split('T')[0]
   })
@@ -68,15 +68,15 @@ export default function Producao() {
 
   async function salvar(e) {
     e.preventDefault()
-    if (!form.produto || !form.quantidade || !form.meta || !form.maquina_id) return
+    if (!form.produto || !form.quantidade_produzida || !form.quantidade_esperada || !form.maquina_id) return
 
     const maquinaSel = maquinas.find(m => String(m.id) === String(form.maquina_id))
     const novoRegistro = {
       produto: form.produto,
-      quantidade: Number(form.quantidade),
-      meta: Number(form.meta),
+      quantidade_produzida: Number(form.quantidade_produzida),
+      quantidade_esperada: Number(form.quantidade_esperada),
       maquina_id: form.maquina_id,
-      maquina_nome: maquinaSel ? maquinaSel.nome : 'Máquina General',
+      nome_maquina: maquinaSel ? maquinaSel.nome : 'Máquina General',
       data: form.data
     }
 
@@ -87,7 +87,13 @@ export default function Producao() {
       setProducoes(prev => [{ id: Date.now(), ...novoRegistro }, ...prev])
     } finally {
       setModalAberto(false)
-      setForm({ produto: '', quantidade: '', meta: '', maquina_id: maquinas[0]?.id || '', data: new Date().toISOString().split('T')[0] })
+      setForm({
+        produto: '',
+        quantidade_produzida: '',
+        quantidade_esperada: '',
+        maquina_id: maquinas[0]?.id || '',
+        data: new Date().toISOString().split('T')[0]
+      })
     }
   }
 
@@ -136,19 +142,21 @@ export default function Producao() {
             </thead>
             <tbody>
               {producoesFiltradas.map((p) => {
-                const perc = Math.round((p.quantidade / p.meta) * 100) || 0
+                const qtdProd = p.quantidade_produzida || p.quantidade || 0
+                const qtdEsp = p.quantidade_esperada || p.meta || 1
+                const perc = Math.round((qtdProd / qtdEsp) * 100) || 0
                 return (
                   <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
-                    <td className="px-5 py-3 font-medium text-slate-700">{p.produto}</td>
-                    <td className="px-5 py-3 text-slate-600">{p.quantidade} un.</td>
-                    <td className="px-5 py-3 text-slate-600">{p.meta} un.</td>
+                    <td className="px-5 py-3 font-medium text-slate-700">{p.produto || '-'}</td>
+                    <td className="px-5 py-3 text-slate-600">{qtdProd} un.</td>
+                    <td className="px-5 py-3 text-slate-600">{qtdEsp} un.</td>
                     <td className="px-5 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${perc >= 100 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                         {perc}%
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-slate-500">{p.maquina_nome || 'N/A'}</td>
-                    <td className="px-5 py-3 text-slate-500">{p.data}</td>
+                    <td className="px-5 py-3 text-slate-500">{p.nome_maquina || p.maquina_nome || 'N/A'}</td>
+                    <td className="px-5 py-3 text-slate-500">{p.data ? p.data.substring(0, 10) : '-'}</td>
                   </tr>
                 )
               })}
@@ -195,8 +203,8 @@ export default function Producao() {
                 <input
                   type="number"
                   required
-                  value={form.quantidade}
-                  onChange={(e) => setForm({ ...form, quantidade: e.target.value })}
+                  value={form.quantidade_produzida}
+                  onChange={(e) => setForm({ ...form, quantidade_produzida: e.target.value })}
                   className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
@@ -205,8 +213,8 @@ export default function Producao() {
                 <input
                   type="number"
                   required
-                  value={form.meta}
-                  onChange={(e) => setForm({ ...form, meta: e.target.value })}
+                  value={form.quantidade_esperada}
+                  onChange={(e) => setForm({ ...form, quantidade_esperada: e.target.value })}
                   className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
