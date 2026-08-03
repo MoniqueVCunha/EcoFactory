@@ -58,10 +58,10 @@ npm run dev
 ## Estrutura do Repositório
 
 EcoFactory/
-├── backend/        # Servidor Express, rotas e testes Jest
-├── database/       # Schema SQL e Dicionário de Dados
-├── documentacao/   # Escopo, Arquitetura, Endpoints e Protótipos
-└── frontend/       # Interface React, componentes e páginas
+├─ backend/        # Servidor Express, rotas e testes Jest
+├─ database/       # Schema SQL e Dicionário de Dados
+├─ documentacao/   # Escopo, Arquitetura, Endpoints e Protótipos
+└─ frontend/       # Interface React, componentes e páginas
 
 ## Autora
 
