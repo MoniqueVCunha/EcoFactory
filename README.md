@@ -64,6 +64,5 @@ EcoFactory/
 └─ frontend/       # Interface React, componentes e páginas
 
 ## Autora
-
 **Monique Cunha** — Desenvolvimento Full Stack
 Projeto Integrador · Curso Técnico em Informática para Internet · SENAI
